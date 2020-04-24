@@ -18,23 +18,6 @@ df, df_sum, fig = cv.plot_plotly()
 df_sum.insert(0, "", list(df_sum.index))
 
 
-def generate_table(dataframe, max_rows=10):
-    return html.Table(
-        [
-            html.Thead(html.Tr([html.Th(col) for col in dataframe.columns])),
-            html.Tbody(
-                [
-                    html.Tr(
-                        [html.Td(dataframe.iloc[i][col]) for col in dataframe.columns]
-                    )
-                    for i in range(min(len(dataframe), max_rows))
-                ]
-            ),
-        ],
-        style={"color": colors["text"]},
-    )
-
-
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 colors = {"background": "#002b36", "text": "#7FDBFF"}
@@ -48,11 +31,7 @@ app.layout = html.Div(
     style={"backgroundColor": colors["background"]},
     children=[
         html.H1(
-            children="The 'rona", style={"textAlign": "center", "color": colors["text"]}
-        ),
-        html.Div(
-            children="built with Dash: A web application framework  for Python.",
-            style={"textAlign": "center", "color": colors["text"]},
+            children="the 'rona", style={"textAlign": "center", "color": colors["text"]}
         ),
         dcc.Graph(id="rona", figure=fig,),
         html.Div(
@@ -70,6 +49,18 @@ app.layout = html.Div(
                     style={"textAlign": "center", "color": colors["text"]},
                 ),
                 dcc.Slider(
+                    id="lockdown-slider",
+                    min=0,
+                    max=365,
+                    value=60,
+                    marks={str(i): str(i) for i in [0, 365]},
+                    step=1,
+                ),
+                html.Div(
+                    id="slider2-output-container",
+                    style={"textAlign": "center", "color": colors["text"]},
+                ),
+                dcc.Slider(
                     id="intervention-slider",
                     min=0,
                     max=1,
@@ -78,14 +69,12 @@ app.layout = html.Div(
                     step=0.1,
                 ),
                 html.Div(
-                    id="slider2-output-container",
+                    id="slider3-output-container",
                     style={"textAlign": "center", "color": colors["text"]},
                 ),
             ],
             style={"width": "20%", "display": "inline-block", "padding": "0 20"},
         ),
-        html.H4(children="Summary", style={"color": colors["text"]}),
-        generate_table(df_sum),
     ],
 )
 
@@ -95,12 +84,17 @@ app.layout = html.Div(
         Output("rona", "figure"),
         Output("slider-output-container", "children"),
         Output("slider2-output-container", "children"),
+        Output("slider3-output-container", "children"),
     ],
-    [Input("R0-slider", "value"), Input("intervention-slider", "value")],
+    [
+        Input("R0-slider", "value"),
+        Input("lockdown-slider", "value"),
+        Input("intervention-slider", "value"),
+    ],
 )
-def update_figure(R0, OMInterventionAmt):
+def update_figure(R0, D_lockdown, OMInterventionAmt):
     y0 = np.array([N0, I0])
-    params = np.array([R0, OMInterventionAmt, 5.2, 2.9, 60])
+    params = np.array([R0, OMInterventionAmt, 5.2, 2.9, D_lockdown])
     cv = Covid(y0, params)
     cv.solve(tmin, tmax)
     df, df_sum, fig = cv.plot_plotly()
@@ -112,8 +106,10 @@ def update_figure(R0, OMInterventionAmt):
     )
 
     sliderText = "R0 = {:.1f}".format(R0)
-    slider2Text = "Intervention: decrease transmission by {:.0f}%".format(100 * OMInterventionAmt)
-    return (fig, sliderText, slider2Text)
+    slider2Text = "lockdown active after {:.0f} days".format(D_lockdown)
+    slider3Text = "decrease transmission by {:.1f}".format(OMInterventionAmt)
+
+    return (fig, sliderText, slider2Text, slider3Text)
 
 
 if __name__ == "__main__":
