@@ -263,7 +263,7 @@ class Covid:
         fig.update_layout(
             barmode="overlay",
             xaxis_title="days",
-            yaxis_title="counts",
+            yaxis_title="",
             title="Epidemic Spread Visualisation",
             template="presentation",
         )
