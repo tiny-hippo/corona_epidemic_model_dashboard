@@ -107,7 +107,7 @@ def update_figure(R0, D_lockdown, OMInterventionAmt):
 
     sliderText = "R0 = {:.1f}".format(R0)
     slider2Text = "lockdown active after {:.0f} days".format(D_lockdown)
-    slider3Text = "decrease transmission by {:.1f}".format(OMInterventionAmt)
+    slider3Text = "decrease transmission by {:.2f}".format(OMInterventionAmt)
 
     return (fig, sliderText, slider2Text, slider3Text)
 
