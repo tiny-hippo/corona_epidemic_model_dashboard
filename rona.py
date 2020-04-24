@@ -198,6 +198,20 @@ class Covid:
                 "label": "Fatalities",
             },
         )
+        # sns.distplot(
+        #     t,
+        #     bins=len(t) // 2,
+        #     kde=False,
+        #     ax=ax,
+        #     hist_kws={
+        #         "weights": weights_recovered,
+        #         "alpha": 0.8,
+        #         "color": col_fatal,
+        #         "rwidth": 0.8,
+        #         "cumulative": False,
+        #         "label": "Recovered",
+        #     },
+        # )
         sns.despine()
         ax.set_xlabel("days")
         ax.set_xlim(left=0, right=300)
@@ -209,8 +223,8 @@ class Covid:
         plt.tight_layout()
 
     def plot_plotly(self):
-        t = np.arange(self.tmin, self.tmax + 1, 1)
-        self.z = self.N * self.sol.sol(t)
+        self.t = np.arange(self.tmin, self.tmax + 1, 1)
+        self.z = self.N * self.sol.sol(self.t)
 
         columns = [
             "Susceptible",
@@ -218,47 +232,66 @@ class Covid:
             "Infectious",
             "Recovering (mild)",
             "Recovering (severe at home)",
-            "Recovering (severe in hospital)",
+            "Hospitalized",
             "Recovering (fatal)",
             "Recovered (mild)",
             "Recovered (severe)",
             "Fatalities",
         ]
         df = pd.DataFrame(self.z.T, columns=columns)
-        counts, bins = np.histogram(t, bins=len(t) // 2, weights=df["Exposed"])
-        counts2, bins = np.histogram(t, bins=len(t) // 2, weights=df["Infectious"])
-        counts3, bins = np.histogram(
-            t, bins=len(t) // 2, weights=df["Recovering (severe in hospital)"]
+        df.insert(0, "Time", self.t)
+
+        counts1, bins1 = self.get_histogram(self.t, df, "Exposed")
+        counts2, bins2 = self.get_histogram(self.t, df, "Infectious")
+        counts3, bins3 = self.get_histogram(self.t, df, "Hospitalized")
+        counts4, bins4 = self.get_histogram(self.t, df, "Fatalities")
+        counts5, bins5 = self.get_histogram(self.t, df, "Recovering (fatal)")
+
+        df_binned = pd.DataFrame(
+            np.array([counts1, counts2, counts3, counts4]).T,
+            columns=["Exposed", "Infectious", "Hospitalized", "Fatalities"],
         )
-        bins = 0.5 * (bins[:-1] + bins[1:])
-        counts = np.array(counts, dtype=int)
-        counts2 = np.array(counts2, dtype=int)
-        counts3 = np.array(counts3, dtype=int)
-        bins = np.array(bins, dtype=int)
+        df_sum = pd.DataFrame({"Total": df_binned.sum(), "Peak": df_binned.max()})
+        df_sum.iloc[-1, 0] = df_sum.iloc[-1, 1]
+        df_sum.iloc[-1, 1] = ""
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=bins, y=counts, opacity=0.5, name="Exposed"))
-        fig.add_trace(go.Bar(x=bins, y=counts2, opacity=0.5, name="Infectious"))
-        fig.add_trace(go.Bar(x=bins, y=counts3, opacity=0.5, name="Hospitalized"))
-        fig.update_layout(barmode="overlay", xaxis_title="days", yaxis_title="counts",
-                          template="presentation")
-        # fig = px.bar(x=bins, y=counts)
-        fig.show()
+        fig.add_trace(go.Bar(x=bins1, y=counts1, opacity=0.5, name="Exposed"))
+        fig.add_trace(go.Bar(x=bins2, y=counts2, opacity=0.5, name="Infectious"))
+        fig.add_trace(go.Bar(x=bins3, y=counts3, opacity=0.5, name="Hospitalized"))
+        fig.add_trace(go.Bar(x=bins4, y=counts4, opacity=0.5, name="Fatalities"))
+        fig.update_layout(
+            barmode="overlay",
+            xaxis_title="days",
+            yaxis_title="counts",
+            title="Epidemic Spread Visualisation",
+            template="presentation",
+        )
+        # fig.show()
+        return (df, df_sum, fig)
+
+    @staticmethod
+    def get_histogram(x, df, column_name):
+        counts, bins = np.histogram(x, bins=len(x) // 2, weights=df[column_name])
+        bins = 0.5 * (bins[:-1] + bins[1:])
+        counts = counts.astype(int)
+        bins = bins.astype(int)
+        return counts, bins
 
 
-# y0 = [Total population, # infected]
-N0 = 7e6
-I0 = 1
-y0 = np.array([N0, I0])
-# params = [R0, Rt, Tinc, Tinf, Tlock]
-params = np.array([2.2, 0.66, 5.2, 2.9, 60])
+if __name__ == "__main__":
+    # y0 = [Total population, # infected]
+    N0 = 7e6
+    I0 = 1
+    y0 = np.array([N0, I0])
+    # params = [R0, Rt, Tinc, Tinf, Tlock]
+    params = np.array([2.2, 0.66, 5.2, 2.9, 60])
 
-tmin = 0
-tmax = 365
+    tmin = 0
+    tmax = 365
 
-cv = Covid(y0, params)
-cv.solve(tmin, tmax)
-# cv.plot(normalize=False, log_scale=True)
-# cv.plot_hist(normalize=False, log_scale=False)
-cv.plot_plotly()
-plt.show()
+    cv = Covid(y0, params)
+    cv.solve(tmin, tmax)
+    # cv.plot(normalize=False, log_scale=True)
+    # cv.plot_hist(normalize=False, log_scale=False)
+    df, df_sum, fig = cv.plot_plotly()
