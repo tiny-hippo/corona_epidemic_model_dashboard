@@ -35,7 +35,7 @@ class Covid:
         self.D_incubation = params[2]  # incubation period [days]
         self.D_infectious = params[3]  # infectious period  [days]
         self.D_lockdown = params[4]  # lockdown start [days]
-        self.D_lockdown_duration = 7 * 12 * 1e10  # lockdown duration [days]
+        self.D_lockdown_duration = params[5]  # lockdown duration [days]
 
         # clinical dynamics
         self.time_to_death = 32
@@ -46,7 +46,7 @@ class Covid:
             self.time_to_death - self.D_infectious
         )  #  time from end of incubation to death [days]
         self.cfr = 0.02  # case fatality rate
-        self.p_severe = 0.2  # hospitalization rate
+        self.p_severe = 0.1  # hospitalization rate
 
     def seir_expanded(self, t, y):
         # susceptible, exposed, infectious, recovering (mild),
@@ -284,8 +284,8 @@ if __name__ == "__main__":
     N0 = 7e6
     I0 = 1
     y0 = np.array([N0, I0])
-    # params = [R0, Rt, Tinc, Tinf, Tlock]
-    params = np.array([2.2, 0.66, 5.2, 2.9, 60])
+    # params = [R0, Rt, Tinc, Tinf, Tlock, Tlock_duration]
+    params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400])
 
     tmin = 0
     tmax = 365
