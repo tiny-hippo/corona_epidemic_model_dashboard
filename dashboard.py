@@ -9,7 +9,7 @@ from rona import Covid
 N0 = 7e6
 I0 = 1
 y0 = np.array([N0, I0])
-params = np.array([2.2, 0.66, 5.2, 2.9, 60])
+params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400])
 tmin = 0
 tmax = 365
 cv = Covid(y0, params)
@@ -33,7 +33,7 @@ app.layout = html.Div(
         html.H1(
             children="the 'rona", style={"textAlign": "center", "color": colors["text"]}
         ),
-        dcc.Graph(id="rona", figure=fig,),
+        dcc.Graph(id="rona", figure=fig),
         html.Div(
             [
                 dcc.Slider(
@@ -66,10 +66,22 @@ app.layout = html.Div(
                     max=1,
                     value=0.66,
                     marks={str(i): str(i) for i in [0, 1]},
-                    step=0.1,
+                    step=0.05,
                 ),
                 html.Div(
                     id="slider3-output-container",
+                    style={"textAlign": "center", "color": colors["text"]},
+                ),
+                dcc.Slider(
+                    id="duration-slider",
+                    min=1,
+                    max=365,
+                    value=365,
+                    marks={str(i): str(i) for i in [0, 365]},
+                    step=1,
+                ),
+                html.Div(
+                    id="slider4-output-container",
                     style={"textAlign": "center", "color": colors["text"]},
                 ),
             ],
@@ -85,19 +97,24 @@ app.layout = html.Div(
         Output("slider-output-container", "children"),
         Output("slider2-output-container", "children"),
         Output("slider3-output-container", "children"),
+        Output("slider4-output-container", "children"),
     ],
     [
         Input("R0-slider", "value"),
         Input("lockdown-slider", "value"),
         Input("intervention-slider", "value"),
+        Input("duration-slider", "value"),
     ],
 )
-def update_figure(R0, D_lockdown, OMInterventionAmt):
+def update_figure(R0, D_lockdown, OMInterventionAmt, D_lockdown_duration):
     y0 = np.array([N0, I0])
-    params = np.array([R0, OMInterventionAmt, 5.2, 2.9, D_lockdown])
+    params = np.array(
+        [R0, OMInterventionAmt, 5.2, 2.9, D_lockdown, D_lockdown_duration]
+    )
     cv = Covid(y0, params)
     cv.solve(tmin, tmax)
     df, df_sum, fig = cv.plot_plotly()
+    print(df_sum)
 
     fig.update_layout(
         plot_bgcolor=colors["background"],
@@ -108,8 +125,9 @@ def update_figure(R0, D_lockdown, OMInterventionAmt):
     sliderText = "R0 = {:.1f}".format(R0)
     slider2Text = "lockdown active after {:.0f} days".format(D_lockdown)
     slider3Text = "decrease transmission by {:.2f}".format(OMInterventionAmt)
+    slider4Text = "lockdown duration {:.0f} days".format(D_lockdown_duration)
 
-    return (fig, sliderText, slider2Text, slider3Text)
+    return (fig, sliderText, slider2Text, slider3Text, slider4Text)
 
 
 if __name__ == "__main__":
