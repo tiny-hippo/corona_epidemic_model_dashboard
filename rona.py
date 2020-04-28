@@ -20,7 +20,7 @@ jtplot.style(
 
 
 class Covid:
-    def __init__(self, y0, params):
+    def __init__(self, y0, transmission_params):
         # initial condition
         self.N = y0[0]
         self.I0 = y0[1]
@@ -29,24 +29,26 @@ class Covid:
         )
 
         # transmission dynamics
-        self.R0 = params[0]  # reproduction number
-        self.OMInterventionAmt = params[1]  # transmission number
+        self.R0 = transmission_params[0]  # reproduction number
+        self.OMInterventionAmt = transmission_params[1]  # transmission number
         self.InterventionAmt = 1 - self.OMInterventionAmt
-        self.D_incubation = params[2]  # incubation period [days]
-        self.D_infectious = params[3]  # infectious period  [days]
-        self.D_lockdown = params[4]  # lockdown start [days]
-        self.D_lockdown_duration = params[5]  # lockdown duration [days]
+        self.D_incubation = transmission_params[2]  # incubation period [days]
+        self.D_infectious = transmission_params[3]  # infectious period  [days]
+        self.D_lockdown = transmission_params[4]  # lockdown start [days]
+        self.D_lockdown_duration = transmission_params[5]  # lockdown duration [days]
+        self.R0_after = transmission_params[6]
 
         # clinical dynamics
-        self.time_to_death = 32
-        self.D_recovery_mild = 11.1  # recovery time for mild cases [days]
-        self.D_recovery_severe = 28.6  # length of hospital stay [days]
-        self.D_hospital_lag = 5  # # time to hospitalization [days]
+        clinical_params = [32, 11.1, 28.6, 5, 0.01, 0.1]
+        self.time_to_death = clinical_params[0]
+        self.D_recovery_mild = clinical_params[1]  # recovery time for mild cases [days]
+        self.D_recovery_severe = clinical_params[2]  # length of hospital stay [days]
+        self.D_hospital_lag = clinical_params[3]  # # time to hospitalization [days]
         self.D_death = (
             self.time_to_death - self.D_infectious
         )  #  time from end of incubation to death [days]
-        self.cfr = 0.02  # case fatality rate
-        self.p_severe = 0.1  # hospitalization rate
+        self.cfr = clinical_params[4]  # case fatality rate
+        self.p_severe = clinical_params[5]  # hospitalization rate
 
     def seir_expanded(self, t, y):
         # susceptible, exposed, infectious, recovering (mild),
@@ -59,7 +61,7 @@ class Covid:
         if t > self.D_lockdown and t < self.D_lockdown + self.D_lockdown_duration:
             beta = self.InterventionAmt * self.R0 / self.D_infectious
         elif t > self.D_lockdown_duration + self.D_lockdown_duration:
-            beta = 0.5 * self.R0 / self.D_infectious
+            beta = self.R0_after / self.D_infectious
         else:
             beta = self.R0 / self.D_infectious
 
@@ -256,7 +258,7 @@ class Covid:
         df_sum.iloc[-1, 1] = ""
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=bins1, y=counts1, opacity=0.5, name="Exposed"))
+        # fig.add_trace(go.Bar(x=bins1, y=counts1, opacity=0.5, name="Exposed"))
         fig.add_trace(go.Bar(x=bins2, y=counts2, opacity=0.5, name="Infectious"))
         fig.add_trace(go.Bar(x=bins3, y=counts3, opacity=0.5, name="Hospitalized"))
         fig.add_trace(go.Bar(x=bins4, y=counts4, opacity=0.5, name="Fatalities"))
@@ -285,7 +287,7 @@ if __name__ == "__main__":
     I0 = 1
     y0 = np.array([N0, I0])
     # params = [R0, Rt, Tinc, Tinf, Tlock, Tlock_duration]
-    params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400])
+    params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400, 0.5 * 2.2])
 
     tmin = 0
     tmax = 365
