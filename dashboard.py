@@ -5,6 +5,12 @@ from dash.dependencies import Input, Output
 import numpy as np
 from rona import Covid
 
+# current estimates:
+# R0 = 2.8
+# Rt = 0.3 - 0.7
+# timeline: lockdown 16.03, first softening: 27.04
+# hospital capacity: 2000 beds
+
 
 N0 = 7e6
 I0 = 1
@@ -38,7 +44,19 @@ app.layout = html.Div(
             [
                 html.H5(
                     children="Transmission Dynamics",
-                    style={"textAlign": "center", "color": colors["text"]},
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-bottom": "20px",
+                    },
+                ),
+                html.Div(
+                    id="R0-slider-output-container",
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-bottom": "10px",
+                    },
                 ),
                 dcc.Slider(
                     id="R0-slider",
@@ -49,8 +67,13 @@ app.layout = html.Div(
                     step=0.1,
                 ),
                 html.Div(
-                    id="R0-slider-output-container",
-                    style={"textAlign": "center", "color": colors["text"]},
+                    id="lockdown-slider-output-container",
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-top": "20px",
+                        "padding-bottom": "10px",
+                    },
                 ),
                 dcc.Slider(
                     id="lockdown-slider",
@@ -61,8 +84,13 @@ app.layout = html.Div(
                     step=1,
                 ),
                 html.Div(
-                    id="lockdown-slider-output-container",
-                    style={"textAlign": "center", "color": colors["text"]},
+                    id="intervention-slider-output-container",
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-top": "20px",
+                        "padding-bottom": "10px",
+                    },
                 ),
                 dcc.Slider(
                     id="intervention-slider",
@@ -73,8 +101,13 @@ app.layout = html.Div(
                     step=0.05,
                 ),
                 html.Div(
-                    id="intervention-slider-output-container",
-                    style={"textAlign": "center", "color": colors["text"]},
+                    id="duration-slider-output-container",
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-top": "20px",
+                        "padding-bottom": "10px",
+                    },
                 ),
                 dcc.Slider(
                     id="duration-slider",
@@ -85,8 +118,13 @@ app.layout = html.Div(
                     step=1,
                 ),
                 html.Div(
-                    id="duration-slider-output-container",
-                    style={"textAlign": "center", "color": colors["text"]},
+                    id="R0-after-slider-output-container",
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-top": "20px",
+                        "padding-bottom": "10px",
+                    },
                 ),
                 dcc.Slider(
                     id="R0-after-slider",
@@ -96,18 +134,32 @@ app.layout = html.Div(
                     marks={str(i): str(i) for i in range(0, 12, 2)},
                     step=0.1,
                 ),
-                html.Div(
-                    id="R0-after-slider-output-container",
-                    style={"textAlign": "center", "color": colors["text"]},
-                ),
+
             ],
-            style={"width": "20%", "display": "inline-block", "padding": "0 20"},
+            style={
+                "width": "20%",
+                "display": "inline-block",
+                "padding": "0px 50px 0px 0px",
+            },
         ),
         html.Div(
             [
                 html.H5(
                     children="Clinical Dynamics",
-                    style={"textAlign": "center", "color": colors["text"]},
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-bottom": "20px",
+                    },
+                ),
+                html.Div(
+                    id="test-output",
+                    style={
+                        "textAlign": "center",
+                        "color": colors["text"],
+                        "padding-top": "20px",
+                        "padding-bottom": "10px",
+                    },
                 ),
                 dcc.Slider(
                     id="test-slider",
@@ -121,7 +173,7 @@ app.layout = html.Div(
             style={
                 "width": "20%",
                 "display": "inline-block",
-                "padding": "0 20",
+                "padding": "0px 50px 0px 0px",
                 "verticalAlign": "top",
             },
         ),
