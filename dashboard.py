@@ -15,11 +15,13 @@ from rona import Covid
 N0 = 7e6
 I0 = 1
 y0 = np.array([N0, I0])
-params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400, 1.1])
+t_params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400, 0.5 * 2.2])
+c_params = np.array([32, 11.1, 28.6, 5, 0.01, 0.1])
+
 tmin = 0
 tmax = 365
-cv = Covid(y0, params)
-cv.solve(tmin, tmax)
+cv = Covid(y0, t_params, c_params)
+cv.solve_for_dashboard(tmin, tmax)
 df, df_sum, fig = cv.plot_plotly()
 df_sum.insert(0, "", list(df_sum.index))
 
@@ -42,21 +44,9 @@ app.layout = html.Div(
         dcc.Graph(id="rona", figure=fig),
         html.Div(
             [
-                html.H5(
-                    children="Transmission Dynamics",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-bottom": "20px",
-                    },
-                ),
+                html.H6(children="Transmission", className="app-header",),
                 html.Div(
-                    id="R0-slider-output-container",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-bottom": "10px",
-                    },
+                    id="R0-slider-output-container", className="output-container",
                 ),
                 dcc.Slider(
                     id="R0-slider",
@@ -67,13 +57,25 @@ app.layout = html.Div(
                     step=0.1,
                 ),
                 html.Div(
-                    id="lockdown-slider-output-container",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-top": "20px",
-                        "padding-bottom": "10px",
-                    },
+                    id="incubation-slider-output-container",
+                    className="output-container",
+                ),
+                dcc.Slider(
+                    id="incubation-slider", min=0.15, max=24, value=5.2, step=0.1,
+                ),
+                html.Div(
+                    id="infectious-slider-output-container",
+                    className="output-container",
+                ),
+                dcc.Slider(id="infectious-slider", min=0, max=24, value=2.9, step=0.1,),
+            ],
+            className="parameter-container",
+        ),
+        html.Div(
+            [
+                html.H6(children="Lockdown", className="app-header",),
+                html.Div(
+                    id="lockdown-slider-output-container", className="output-container",
                 ),
                 dcc.Slider(
                     id="lockdown-slider",
@@ -85,12 +87,7 @@ app.layout = html.Div(
                 ),
                 html.Div(
                     id="intervention-slider-output-container",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-top": "20px",
-                        "padding-bottom": "10px",
-                    },
+                    className="output-container",
                 ),
                 dcc.Slider(
                     id="intervention-slider",
@@ -101,13 +98,7 @@ app.layout = html.Div(
                     step=0.05,
                 ),
                 html.Div(
-                    id="duration-slider-output-container",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-top": "20px",
-                        "padding-bottom": "10px",
-                    },
+                    id="duration-slider-output-container", className="output-container",
                 ),
                 dcc.Slider(
                     id="duration-slider",
@@ -118,13 +109,7 @@ app.layout = html.Div(
                     step=1,
                 ),
                 html.Div(
-                    id="R0-after-slider-output-container",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-top": "20px",
-                        "padding-bottom": "10px",
-                    },
+                    id="R0-after-slider-output-container", className="output-container",
                 ),
                 dcc.Slider(
                     id="R0-after-slider",
@@ -134,48 +119,51 @@ app.layout = html.Div(
                     marks={str(i): str(i) for i in range(0, 12, 2)},
                     step=0.1,
                 ),
-
             ],
-            style={
-                "width": "20%",
-                "display": "inline-block",
-                "padding": "0px 50px 0px 0px",
-            },
+            className="parameter-container",
         ),
         html.Div(
             [
-                html.H5(
-                    children="Clinical Dynamics",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-bottom": "20px",
-                    },
-                ),
+                html.H6(children="Hospitalization", className="app-header",),
                 html.Div(
-                    id="test-output",
-                    style={
-                        "textAlign": "center",
-                        "color": colors["text"],
-                        "padding-top": "20px",
-                        "padding-bottom": "10px",
-                    },
+                    id="recovery-severe-slider-output-container",
+                    className="output-container",
                 ),
                 dcc.Slider(
-                    id="test-slider",
-                    min=1,
-                    max=100,
-                    value=50,
-                    marks={str(i): str(i) for i in range(1, 101, 10)},
-                    step=10,
+                    id="recovery-severe-slider", min=1, max=100, value=29, step=1,
                 ),
+                html.Div(
+                    id="hospital-lag-slider-output-container",
+                    className="output-container",
+                ),
+                dcc.Slider(id="hospital-lag-slider", min=1, max=100, value=5, step=1,),
+                html.Div(
+                    id="p-severe-slider-output-container", className="output-container",
+                ),
+                dcc.Slider(id="p-severe-slider", min=0, max=1, value=0.2, step=0.01,),
             ],
-            style={
-                "width": "20%",
-                "display": "inline-block",
-                "padding": "0px 50px 0px 0px",
-                "verticalAlign": "top",
-            },
+            className="parameter-container",
+        ),
+        html.Div(
+            [
+                html.H6(children="Recovery & Mortality", className="app-header",),
+                html.Div(
+                    id="death-slider-output-container", className="output-container",
+                ),
+                dcc.Slider(id="death-slider", min=3, max=100, value=32, step=1,),
+                html.Div(
+                    id="recovery-mild-slider-output-container",
+                    className="output-container",
+                ),
+                dcc.Slider(
+                    id="recovery-mild-slider", min=1, max=100, value=11, step=1,
+                ),
+                html.Div(
+                    id="p-fatal-slider-output-container", className="output-container",
+                ),
+                dcc.Slider(id="p-fatal-slider", min=0, max=0.1, value=0.01, step=0.001,),
+            ],
+            className="parameter-container",
         ),
     ],
 )
@@ -185,30 +173,72 @@ app.layout = html.Div(
     [
         Output("rona", "figure"),
         Output("R0-slider-output-container", "children"),
+        Output("incubation-slider-output-container", "children"),
+        Output("infectious-slider-output-container", "children"),
         Output("lockdown-slider-output-container", "children"),
         Output("intervention-slider-output-container", "children"),
         Output("duration-slider-output-container", "children"),
         Output("R0-after-slider-output-container", "children"),
+        Output("death-slider-output-container", "children"),
+        Output("recovery-mild-slider-output-container", "children"),
+        Output("recovery-severe-slider-output-container", "children"),
+        Output("hospital-lag-slider-output-container", "children"),
+        Output("p-fatal-slider-output-container", "children"),
+        Output("p-severe-slider-output-container", "children"),
     ],
     [
         Input("R0-slider", "value"),
+        Input("incubation-slider", "value"),
+        Input("infectious-slider", "value"),
         Input("lockdown-slider", "value"),
         Input("intervention-slider", "value"),
         Input("duration-slider", "value"),
         Input("R0-after-slider", "value"),
+        Input("death-slider", "value"),
+        Input("recovery-mild-slider", "value"),
+        Input("recovery-severe-slider", "value"),
+        Input("hospital-lag-slider", "value"),
+        Input("p-fatal-slider", "value"),
+        Input("p-severe-slider", "value"),
     ],
 )
-def update_figure(R0, D_lockdown, OMInterventionAmt, D_lockdown_duration, R0_after):
+def update_figure(
+    R0,
+    D_incubation,
+    D_infectious,
+    D_lockdown,
+    OMInterventionAmt,
+    D_lockdown_duration,
+    R0_after,
+    D_death,
+    D_recovery_mild,
+    D_recovery_severe,
+    D_hospital_lag,
+    p_fatal,
+    p_severe,
+):
     y0 = np.array([N0, I0])
     transmission_params = np.array(
-        [R0, OMInterventionAmt, 5.2, 2.9, D_lockdown, D_lockdown_duration, R0_after]
+        [
+            R0,
+            OMInterventionAmt,
+            D_incubation,
+            D_infectious,
+            D_lockdown,
+            D_lockdown_duration,
+            R0_after,
+        ]
     )
-    # clinical_params = np.array([time_to_death, D_recovery_mild, D_recovery_severe, D_hospital_lag, cfr, p_severe])
+    clinical_params = np.array(
+        [D_death, D_recovery_mild, D_recovery_severe, D_hospital_lag, p_fatal, p_severe]
+    )
 
-    cv = Covid(y0, transmission_params)
-    cv.solve(tmin, tmax)
+    # clinical_params = np.array([time_to_death, D_recovery_mild, D_recovery_severe, D_hospital_lag, p_fatal, p_severe])
+
+    cv = Covid(y0, transmission_params, clinical_params)
+    cv.solve_for_dashboard(tmin, tmax)
     df, df_sum, fig = cv.plot_plotly()
-    print(df_sum)
+    # print(df_sum)
 
     fig.update_layout(
         plot_bgcolor=colors["background"],
@@ -217,12 +247,37 @@ def update_figure(R0, D_lockdown, OMInterventionAmt, D_lockdown_duration, R0_aft
     )
 
     sliderText = "R0 = {:.1f}".format(R0)
-    slider2Text = "lockdown active after {:.0f} days".format(D_lockdown)
-    slider3Text = "decrease transmission by {:.2f}".format(OMInterventionAmt)
-    slider4Text = "lockdown duration {:.0f} days".format(D_lockdown_duration)
-    slider5Text = "R0 after lockdown: {:.1f}".format(R0_after)
+    slider2Text = "Incubation time: {:.1f} days".format(D_incubation)
+    slider3Text = "Infectious time: {:.1f} days".format(D_infectious)
 
-    return (fig, sliderText, slider2Text, slider3Text, slider4Text, slider5Text)
+    slider4Text = "lockdown active after: {:.0f} days".format(D_lockdown)
+    slider5Text = "decrease transmission by: {:.2f}".format(OMInterventionAmt)
+    slider6Text = "lockdown duration: {:.0f} days".format(D_lockdown_duration)
+    slider7Text = "R0 after lockdown: {:.1f}".format(R0_after)
+
+    slider8Text = "Time to death: {:.0f} days".format(D_death)
+    slider9Text = "Time to recovery (mild): {:.0f} days".format(D_recovery_mild)
+    slider10Text = "Time to recovery (severe): {:.0f} days".format(D_recovery_severe)
+    slider11Text = "Time to hospitalization: {:.0f} days".format(D_hospital_lag)
+    slider12Text = "Case fatality rate: {:.1f}%".format(100 * p_fatal)
+    slider13Text = "Hospitalization rate: {:.1f}".format(100 * p_severe)
+
+    return (
+        fig,
+        sliderText,
+        slider2Text,
+        slider3Text,
+        slider4Text,
+        slider5Text,
+        slider6Text,
+        slider7Text,
+        slider8Text,
+        slider9Text,
+        slider10Text,
+        slider11Text,
+        slider12Text,
+        slider13Text,
+    )
 
 
 if __name__ == "__main__":
