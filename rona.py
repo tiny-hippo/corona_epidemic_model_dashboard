@@ -20,11 +20,11 @@ jtplot.style(
 
 
 class Covid:
-    def __init__(self, y0, transmission_params):
+    def __init__(self, y0, transmission_params, clinical_params):
         # initial condition
         self.N = y0[0]
         self.I0 = y0[1]
-        self.inital_state = np.array(
+        self.initial_state = np.array(
             [1 - self.I0 / self.N, 0, self.I0 / self.N, 0, 0, 0, 0, 0, 0, 0]
         )
 
@@ -39,13 +39,13 @@ class Covid:
         self.R0_after = transmission_params[6]
 
         # clinical dynamics
-        clinical_params = [32, 11.1, 28.6, 5, 0.01, 0.1]
-        self.time_to_death = clinical_params[0]
+        # clinical_params = [32, 11.1, 28.6, 5, 0.01, 0.1]
+        self.D_death = clinical_params[0]
         self.D_recovery_mild = clinical_params[1]  # recovery time for mild cases [days]
         self.D_recovery_severe = clinical_params[2]  # length of hospital stay [days]
         self.D_hospital_lag = clinical_params[3]  # # time to hospitalization [days]
         self.D_death = (
-            self.time_to_death - self.D_infectious
+            self.D_death - self.D_infectious
         )  #  time from end of incubation to death [days]
         self.cfr = clinical_params[4]  # case fatality rate
         self.p_severe = clinical_params[5]  # hospitalization rate
@@ -91,11 +91,23 @@ class Covid:
         self.sol = solve_ivp(
             self.seir_expanded,
             t_span=(self.tmin, self.tmax),
-            y0=self.inital_state,
+            y0=self.initial_state,
             first_step=1,
             max_step=2,
             vectorized=True,
             dense_output=True,
+        )
+
+    def solve_for_dashboard(self, tmin, tmax):
+        self.tmin = tmin
+        self.tmax = tmax
+        self.t = np.arange(self.tmin, self.tmax + 1, 1)
+        self.sol = solve_ivp(
+            self.seir_expanded,
+            t_span=(self.tmin, self.tmax),
+            y0=self.initial_state,
+            t_eval=self.t,
+            vectorized=True,
         )
 
     def plot(self, normalize=True, log_scale=False):
@@ -225,8 +237,8 @@ class Covid:
         plt.tight_layout()
 
     def plot_plotly(self):
-        self.t = np.arange(self.tmin, self.tmax + 1, 1)
-        self.z = self.N * self.sol.sol(self.t)
+        self.z = self.N * self.sol.y
+        print(self.z.shape)
 
         columns = [
             "Susceptible",
@@ -287,13 +299,18 @@ if __name__ == "__main__":
     I0 = 1
     y0 = np.array([N0, I0])
     # params = [R0, Rt, Tinc, Tinf, Tlock, Tlock_duration]
-    params = np.array([2.2, 0.66, 5.2, 2.9, 60, 400, 0.5 * 2.2])
+    t_params = np.array([2.8, 0.75, 5.2, 2.9, 60, 400, 0.5 * 2.2])
+    c_params = np.array([32, 11.1, 28.6, 5, 0.01, 0.1])
 
     tmin = 0
     tmax = 365
 
-    cv = Covid(y0, params)
-    cv.solve(tmin, tmax)
+    # cv = Covid(y0, t_params, c_params)
+    # cv.solve(tmin, tmax)
     # cv.plot(normalize=False, log_scale=True)
     # cv.plot_hist(normalize=False, log_scale=False)
+
+    cv = Covid(y0, t_params, c_params)
+    cv.solve_for_dashboard(tmin, tmax)
     df, df_sum, fig = cv.plot_plotly()
+    fig.show()
