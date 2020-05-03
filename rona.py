@@ -238,7 +238,6 @@ class Covid:
 
     def plot_plotly(self):
         self.z = self.N * self.sol.y
-        print(self.z.shape)
 
         columns = [
             "Susceptible",
