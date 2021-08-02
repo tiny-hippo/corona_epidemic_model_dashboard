@@ -6,20 +6,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from scipy.integrate import solve_ivp
-from jupyterthemes import jtplot
 
-jtplot.style(
-    theme="onedork",
-    context="talk",
-    fscale=1.5,
-    spines=True,
-    gridlines="--",
-    ticks=True,
-    grid=False,
-)
+mpl.rcParams.update({"font.size": 15})
 
 
-class Covid:
+class Seir:
     def __init__(self, y0, transmission_params, clinical_params):
         # initial condition
         self.N = y0[0]
@@ -304,12 +295,12 @@ if __name__ == "__main__":
     tmin = 0
     tmax = 365
 
-    # cv = Covid(y0, t_params, c_params)
+    # cv = Seir(y0, t_params, c_params)
     # cv.solve(tmin, tmax)
     # cv.plot(normalize=False, log_scale=True)
     # cv.plot_hist(normalize=False, log_scale=False)
 
-    cv = Covid(y0, t_params, c_params)
+    cv = Seir(y0, t_params, c_params)
     cv.solve_for_dashboard(tmin, tmax)
     df, df_sum, fig = cv.plot_plotly()
     fig.show()

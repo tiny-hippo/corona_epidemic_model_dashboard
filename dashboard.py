@@ -3,7 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import numpy as np
-from rona import Covid
+from main import Seir
 
 # current estimates:
 # R0 = 2.8
@@ -20,7 +20,7 @@ c_params = np.array([32, 11.1, 28.6, 5, 0.01, 0.1])
 
 tmin = 0
 tmax = 365
-cv = Covid(y0, t_params, c_params)
+cv = Seir(y0, t_params, c_params)
 cv.solve_for_dashboard(tmin, tmax)
 df, df_sum, fig = cv.plot_plotly()
 df_sum.insert(0, "", list(df_sum.index))
@@ -39,7 +39,7 @@ app.layout = html.Div(
     style={"backgroundColor": colors["background"]},
     children=[
         html.H1(
-            children="the 'rona", style={"textAlign": "center", "color": colors["text"]}
+            children="Extended SEIR Model for SARS-CoV-2", style={"textAlign": "center", "color": colors["text"]}
         ),
         dcc.Graph(id="rona", figure=fig),
         html.Div(
@@ -235,7 +235,7 @@ def update_figure(
 
     # clinical_params = np.array([time_to_death, D_recovery_mild, D_recovery_severe, D_hospital_lag, p_fatal, p_severe])
 
-    cv = Covid(y0, transmission_params, clinical_params)
+    cv = Seir(y0, transmission_params, clinical_params)
     cv.solve_for_dashboard(tmin, tmax)
     df, df_sum, fig = cv.plot_plotly()
     # print(df_sum)
